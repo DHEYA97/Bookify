@@ -1,0 +1,44 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/*override Theme*/
+.form-floating > .form-select {
+    padding-bottom: 0rem;
+}
+.tox-statusbar__text-container {
+    display: none !important;
+}
+.tox,.tox-tinymce {
+    margin-top: 12px !important
+}
+
+/*Begin Custom Style*/
+
+.dt-spinner + div
+{
+    display : none !important;
+}
+.h-90px {
+    height: 90px !important
+}
+.h-70px
+{
+    height : 70px !important
+}
+/*End Custom Style*/

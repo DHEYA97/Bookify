@@ -1,0 +1,89 @@
+﻿using System.Security.Claims;
+
+namespace Bookify.Web.Controllers
+{
+    [Authorize(Roles = AppRoles.Archive)]
+    public class CategoriesController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
+
+        public CategoriesController(ApplicationDbContext _context, IMapper mapper)
+        {
+            this._context = _context;
+            _mapper = mapper;
+        }
+        public IActionResult Index()
+        {
+            var categories = _context.Categories.AsNoTracking().ToList();
+            var viewModel = _mapper.Map<IEnumerable<CategoryViewModel>>(categories);
+            return View(viewModel);
+        }
+        [HttpGet]
+        [AjaxOnly]
+        public IActionResult Create()
+        {
+            return PartialView("_Form");
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(CategoryFormViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var category = _mapper.Map<Category>(model);
+            category.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+            _context.Add(category);
+            _context.SaveChanges();
+            var viewModel = _mapper.Map<CategoryViewModel>(category);
+            return PartialView("_CategoryRow", viewModel);
+        }
+        [HttpGet]
+        [AjaxOnly]
+        public IActionResult Edit(int Id)
+        {
+            var category = _context.Categories.Find(Id);
+            if (category is null)
+                return BadRequest();
+            var viewModel = _mapper.Map<CategoryFormViewModel>(category);
+            return PartialView("_Form", viewModel);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(CategoryFormViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var category = _context.Categories.Find(model.Id);
+            if (category is null)
+                return BadRequest();
+            category = _mapper.Map(model, category);
+            category.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+            _context.Update(category);
+            _context.SaveChanges();
+            var viewModel = _mapper.Map<CategoryViewModel>(category);
+            return PartialView("_CategoryRow", viewModel);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleStatus(int id)
+        {
+            var category = _context.Categories.Find(id);
+            if (category is null)
+                return NotFound();
+            category.IsDeleted = !category.IsDeleted;
+            category.LastUpdatedOn = DateTime.Now;
+            category.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+            _context.SaveChanges();
+            return Ok(category.LastUpdatedOn.ToString());
+        }
+        public IActionResult AllowItem(CategoryFormViewModel category)
+        {
+            var cat = _context.Categories.SingleOrDefault(c => c.Name == category.Name);
+            var isAllow = cat is null || cat.Id.Equals(category.Id);
+            return Json(isAllow);
+        }
+    }
+}
